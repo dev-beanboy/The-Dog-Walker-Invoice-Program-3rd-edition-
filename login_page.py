@@ -3,6 +3,9 @@
 import os
 import shutil
 from tkinter import *
+from cryptography.fernet import Fernet
+from pathlib import Path
+
 
 # ==================== CREATE ROOT WINDOW ====================
 
@@ -29,103 +32,230 @@ global username_verify
 global password_verify
 global username_login_entry
 global password_login_entry
-global attempts
-username_verify = StringVar()
-password_verify = StringVar()
+global key 
+global cipher_suite
+
+key = os.environ['key']
+cipher_suite = Fernet(key)
+
+username_login_entry = StringVar()
+password_login_entry = StringVar()
 
 # ==================== SUBROUTINES ====================
 
+def delete_account():
+  global username1
+  shutil.rmtree(f"login_info/{username1}")
+  global win
+  win = Toplevel()
+  window_width = 350
+  window_height = 250
+  screen_width = win.winfo_screenwidth()
+  screen_height = win.winfo_screenheight()
+  position_top = int(screen_height / 4 - window_height / 4)
+  position_right = int(screen_width / 2 - window_width / 2)
+  win.geometry(
+    f'{window_width}x{window_height}+{position_right}+{position_top}')
+
+  win.title('Doge account deleted')
+  win.configure(background='#272A37')
+  win.resizable(False, False)
+
+  # ====  Account deleted ==================
+
+  invalid_label = Label(win,
+                        text='Account deleted.',
+                        fg="#FFFFFF",
+                        bg='#272A37',
+                        font=("yu gothic ui", 20, 'bold'))
+  invalid_label.place(x=40, y=50)
+
+  # ======= Proceed ============
+  proceed = Button(win,
+                   fg='#f8f8f8',
+                   text='Proceed',
+                   bg='#1D90F5',
+                   font=("yu gothic ui", 12, "bold"),
+                   relief="flat",
+                   bd=0,
+                   highlightthickness=0,
+                   command=end,
+                   activebackground="#1D90F5")
+  proceed.place(x=40, y=160, width=256, height=45)
+  
 def register():
   os.system('python register_page.py')
 
 
 def end():
   win.destroy()
+  
 def login_verify():
-  username1 = username_verify.get()
-  password1 = password_verify.get()
-  username_login_entry.delete(0, END)
-  password_login_entry.delete(0, END)
+  global username_login_entry
+  global password_login_entry
+  global username1
+  global password1
+  username1 = username_login_entry.get()
+  password1 = password_login_entry.get()
+  Login_userName_entry.delete(0, END)
+  Login_passwordName_entry.delete(0, END)
 
   list_of_files = os.listdir("login_info")
   if username1 in list_of_files:
-    file1 = open(f"login_info/{username1}", "r")
-    verify = file1.read().split()
-    if password1 in verify:
-      login_sucess()
+    password_verify = Path(f"login_info/{username1}/password").read_text()
+    password_verify = cipher_suite.decrypt(password_verify)
+    password_verify = password_verify.decode("utf-8")
+    
+    if password1 == password_verify:
+      login_success()
     else:
-      password_not_recognised()
+      current_attempts = Path(f"login_info/{username1}/attempts").read_text()
+      int_current_attempts = int(current_attempts)
+      int_current_attempts = int_current_attempts-1
+      if int_current_attempts == 0:
+        Login_userName_entry.delete(0, END)
+        Login_passwordName_entry.delete(0, END)
+        delete_account()
+        
+      else:
+        str_current_attempts = str(int_current_attempts)
+        Path(f"login_info/{username1}/attempts").write_text(str_current_attempts)
+        Login_passwordName_entry.delete(0, END)
+      
+        password_not_recognised(str_current_attempts)
   else:
     user_not_found()
+    Login_userName_entry.delete(0, END)
+    Login_passwordName_entry.delete(0, END)
 
-def login_sucess():
-  global login_success_screen
-  attempts = 5
-  login_success_screen = Toplevel(login_screen)
-  login_success_screen.title("Doge Success")
-  login_success_screen.geometry("300x300")
-  login_success_screen.configure(bg='white')
-  login_success_screen.resizable(width=False, height=False)
-  Label(login_success_screen, text="", bg="white").pack()
-  Label(login_success_screen, text="Login Success", bg="white").pack()
-  Label(login_success_screen, text="", bg="white").pack()
-  Button(login_success_screen,
-         text="Run program",
-         height="2",
-         width="18",
-         bg="skyblue",
-         fg="white",
-         highlightthickness=0,
-         pady=0,
-         bd=0,
-         font=("Calibri", 9),
-         command=delete_login_success).pack()
+def login_success():
+  global win
+  global username1
+  print(f"Program update: Logged in as: {username1}")
+  Path(f"login_info/current").write_text(username1)
+  Path(f"login_info/{username1}/attempts").write_text("5")
+  win = Toplevel()
+  window_width = 350
+  window_height = 250
+  screen_width = win.winfo_screenwidth()
+  screen_height = win.winfo_screenheight()
+  position_top = int(screen_height / 4 - window_height / 4)
+  position_right = int(screen_width / 2 - window_width / 2)
+  win.geometry(
+    f'{window_width}x{window_height}+{position_right}+{position_top}')
 
-def password_not_recognised():
-  global password_not_recog_screen
-  password_not_recog_screen = Toplevel(login_screen)
-  password_not_recog_screen.title("Doge not found")
-  password_not_recog_screen.geometry("150x100")
-  pasword_not_recog_screen.configure(bg='white')
-  password_not_recog_screen.resizable(width=False, height=False)
-  Label(password_not_recog_screen, text="Invalid Password ").pack()
-  Button(password_not_recog_screen,
-         text="OK",
-         height="2",
-         width="18",
-         bg="skyblue",
-         fg="white",
-         highlightthickness=0,
-         pady=0,
-         bd=0,
-         font=("Calibri", 9),
-         command=delete_password_not_recognised).pack()
+  win.title('Doge Login Success')
+  win.configure(background='#272A37')
+  win.resizable(False, False)
+
+  # ====  Login success ==================
+
+  invalid_label = Label(win,
+                        text='Login success.',
+                        fg="#FFFFFF",
+                        bg='#272A37',
+                        font=("yu gothic ui", 20, 'bold'))
+  invalid_label.place(x=40, y=50)
+
+  # ======= Proceed ============
+  proceed = Button(win,
+                   fg='#f8f8f8',
+                   text='Run program',
+                   bg='#1D90F5',
+                   font=("yu gothic ui", 12, "bold"),
+                   relief="flat",
+                   bd=0,
+                   highlightthickness=0,
+                   command=delete_login_success,
+                   activebackground="#1D90F5")
+  proceed.place(x=40, y=160, width=256, height=45)
+
+def password_not_recognised(a):
+  global win
+  win = Toplevel()
+  window_width = 350
+  window_height = 250
+  screen_width = win.winfo_screenwidth()
+  screen_height = win.winfo_screenheight()
+  position_top = int(screen_height / 4 - window_height / 4)
+  position_right = int(screen_width / 2 - window_width / 2)
+  win.geometry(
+    f'{window_width}x{window_height}+{position_right}+{position_top}')
+
+  win.title('Doge Wrong Password')
+  win.configure(background='#272A37')
+  win.resizable(False, False)
+
+  # ====  password not recognised ==================
+
+  invalid_label = Label(win,
+                        text='Wrong password.',
+                        fg="#FFFFFF",
+                        bg='#272A37',
+                        font=("yu gothic ui", 20, 'bold'))
+  invalid_label.place(x=40, y=50)
+  invalid_label = Label(win,
+                        text=f'Attempts left: {a}',
+                        fg="#FFFFFF",
+                        bg='#272A37',
+                        font=("yu gothic ui", 20, 'bold'))
+  invalid_label.place(x=40, y=100)
+
+  # ======= Proceed ============
+  proceed = Button(win,
+                   fg='#f8f8f8',
+                   text='Proceed',
+                   bg='#1D90F5',
+                   font=("yu gothic ui", 12, "bold"),
+                   relief="flat",
+                   bd=0,
+                   highlightthickness=0,
+                   command=end,
+                   activebackground="#1D90F5")
+  proceed.place(x=40, y=160, width=256, height=45)
 
 
 def user_not_found():
-  global user_not_found_screen
-  user_not_found_screen = Toplevel(login_screen)
-  user_not_found_screen.title(" Doge Failure")
-  user_not_found_screen.geometry("150x100")
-  user_not_found_screen.configure(bg='white')
-  user_not_found_screen.resizable(width=False, height=False)
-  Label(user_not_found_screen, text="User Not Found").pack()
-  Button(user_not_found_screen,
-         text="OK",
-         height="2",
-         width="18",
-         bg="skyblue",
-         fg="white",
-         highlightthickness=0,
-         pady=0,
-         bd=0,
-         font=("Calibri", 9),
-         command=delete_user_not_found_screen).pack()
+  global win
+  win = Toplevel()
+  window_width = 350
+  window_height = 250
+  screen_width = win.winfo_screenwidth()
+  screen_height = win.winfo_screenheight()
+  position_top = int(screen_height / 4 - window_height / 4)
+  position_right = int(screen_width / 2 - window_width / 2)
+  win.geometry(
+    f'{window_width}x{window_height}+{position_right}+{position_top}')
+
+  win.title('Doge User Missing')
+  win.configure(background='#272A37')
+  win.resizable(False, False)
+
+  # ====  User not found ==================
+
+  invalid_label = Label(win,
+                        text='User not found.',
+                        fg="#FFFFFF",
+                        bg='#272A37',
+                        font=("yu gothic ui", 20, 'bold'))
+  invalid_label.place(x=40, y=50)
+
+  # ======= Proceed ============
+  proceed = Button(win,
+                   fg='#f8f8f8',
+                   text='Proceed',
+                   bg='#1D90F5',
+                   font=("yu gothic ui", 12, "bold"),
+                   relief="flat",
+                   bd=0,
+                   highlightthickness=0,
+                   command=end,
+                   activebackground="#1D90F5")
+  proceed.place(x=40, y=160, width=256, height=45)
 
 def delete_login_success():
-  login_success_screen.destroy()
-  os.system('invoice_calculator.py')
-  window.destroy()
+  win.destroy()
+  os.system('python invoice_calculator.py')
 
 
 def delete_password_not_recognised():
@@ -152,7 +282,6 @@ def forgot_password():
     f'{window_width}x{window_height}+{position_right}+{position_top}')
 
   win.title('Forgot Password')
-  #win.iconbitmap('assets/headerText_image.png')
   win.configure(background='#272A37')
   win.resizable(False, False)
 
@@ -199,26 +328,63 @@ def forgot_password():
                        text='Update Password',
                        bg='#1D90F5',
                        font=("yu gothic ui", 12, "bold"),
-                       command=passwordchange,
+                       command=password_change,
                        relief="flat",
                        bd=0,
                        highlightthickness=0,
                        activebackground="#1D90F5")
   update_pass.place(x=40, y=260, width=256, height=45)
 
+def invalid():
+  global win
+  win.destroy()
+  win = Toplevel()
+  window_width = 350
+  window_height = 250
+  screen_width = win.winfo_screenwidth()
+  screen_height = win.winfo_screenheight()
+  position_top = int(screen_height / 4 - window_height / 4)
+  position_right = int(screen_width / 2 - window_width / 2)
+  win.geometry(
+    f'{window_width}x{window_height}+{position_right}+{position_top}')
 
-def passwordchange():
+  win.title('Invalid credentials')
+  win.configure(background='#272A37')
+  win.resizable(False, False)
+
+  # ====  Invalid credentials ==================
+
+  invalid_label = Label(win,
+                        text='Invalid credentials',
+                        fg="#FFFFFF",
+                        bg='#272A37',
+                        font=("yu gothic ui", 20, 'bold'))
+  invalid_label.place(x=40, y=50)
+
+  # ======= Proceed ============
+  proceed = Button(win,
+                   fg='#f8f8f8',
+                   text='Proceed',
+                   bg='#1D90F5',
+                   font=("yu gothic ui", 12, "bold"),
+                   relief="flat",
+                   bd=0,
+                   highlightthickness=0,
+                   command=end,
+                   activebackground="#1D90F5")
+  proceed.place(x=40, y=160, width=256, height=45)
+
+def password_change():
   username_info = username.get()
   password_info = password.get()
 
-  if username_info in os.listdir('login_info'):
-    with open(f"login_info/{username_info}/{username_info}", 'r') as file:
-      data = file.readlines()
-
-    data[3] = password_info
-
-    with open(f"login_info/{username_info}/{username_info}", 'w') as file:
-      file.writelines(data)
+  if password_info == "":
+    invalid()
+    
+  elif username_info in os.listdir('login_info'):
+    newpassword = cipher_suite.encrypt(bytes(password_info, encoding='utf-8'))
+    with open(f"login_info/{username_info}/password", 'wb') as file:
+      file.write(newpassword)
 
     change_success()
 
@@ -227,7 +393,6 @@ def passwordchange():
 
 def change_success():
   global win
-  win.destroy()
   win = Toplevel()
   window_width = 350
   window_height = 250
@@ -278,14 +443,14 @@ def username_not_found():
   win.geometry(
     f'{window_width}x{window_height}+{position_right}+{position_top}')
 
-  win.title('Doge Account Missing')
+  win.title('Doge User Missing')
   win.configure(background='#272A37')
   win.resizable(False, False)
 
   # ====  Username not found ==================
 
   invalid_label = Label(win,
-                        text='Account not found.',
+                        text='User not found.',
                         fg="#FFFFFF",
                         bg='#272A37',
                         font=("yu gothic ui", 20, 'bold'))
@@ -405,8 +570,15 @@ Login_userName_entry = Entry(
   font=("yu gothic ui SemiBold", 16 * -1),
 )
 Login_userName_entry.place(x=10, y=17, width=354, height=27)
+Login_userName_entry.config(highlightbackground="#3D404B",
+                            highlightcolor="#206DB4",
+                            textvariable=username_login_entry)
 
 # ================ Password Name Section ====================
+
+
+
+
 Login_passwordName_image = PhotoImage(file="assets/username.png")
 Login_passwordName_image_Label = Label(bg_imageLogin,
                                        image=Login_passwordName_image,
@@ -420,11 +592,25 @@ Login_passwordName_text = Label(Login_passwordName_image_Label,
                                 bg="#3D404B")
 Login_passwordName_text.place(x=25, y=0)
 
-Login_passwordName_icon = PhotoImage(file="assets/pass_icon.png")
-Login_passwordName_icon_Label = Label(Login_passwordName_image_Label,
-                                      image=Login_passwordName_icon,
-                                      bg="#3D404B")
-Login_passwordName_icon_Label.place(x=370, y=15)
+
+def toggle_password():
+    if Login_passwordName_entry.cget('show') == '':
+        Login_passwordName_entry.config(show='*')
+    else:
+        Login_passwordName_entry.config(show='')
+
+password_image = PhotoImage(file="assets/pass_icon.png")
+password_button = Button(Login_passwordName_image_Label,
+  bg_imageLogin,
+  image=password_image,
+  borderwidth=0,
+  bg="#3D404B",
+  command=toggle_password,
+  highlightthickness=0,
+  relief="flat",
+  activebackground="#272A37",
+)
+password_button.place(x=370, y=15)
 
 Login_passwordName_entry = Entry(
   Login_passwordName_image_Label,
@@ -436,6 +622,9 @@ Login_passwordName_entry = Entry(
   font=("yu gothic ui SemiBold", 16 * -1),
 )
 Login_passwordName_entry.place(x=10, y=17, width=354, height=27)
+Login_passwordName_entry.config(highlightbackground="#3D404B",
+                            highlightcolor="#206DB4",
+                            textvariable=password_login_entry)
 
 # =============== SUBMIT BUTTON ====================
 

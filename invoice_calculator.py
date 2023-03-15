@@ -3,6 +3,7 @@ import os
 import shutil
 from tkinter import *
 import time
+from datetime import date
 
 # ================ MAIN WINDOW ====================
 window = Tk()
@@ -15,16 +16,15 @@ window.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
 global days_entry
 global dogs_entry
+global t1check
+global t2check
 
 days_entry = 0
 dogs_entry = 0
+t1check = False
+t2check = False
 
 window.configure(bg="#525561")
-
-
-def open():
-  os.system('python register_page.py')
-
 
 # ================Background Image ====================
 
@@ -51,7 +51,6 @@ Login_headerText1 = Label(bg_imageLogin,
                           bg="#272A37")
 Login_headerText1.place(x=110, y=45)
 
-
 # ================ Header Text Right ====================
 
 Login_headerText_image_right = PhotoImage(file="assets/headerText_image.png")
@@ -76,6 +75,9 @@ loginAccount_header = Label(bg_imageLogin,
                             bg="#272A37")
 loginAccount_header.place(x=75, y=121)
 
+def save():
+  print("Program update: Invoice saved to slot {save_slot}")
+
 # ================ Dog Walker Invoice Shape ====================
 square_left = PhotoImage(file="assets/square.png")
 square_label1 = Label(bg_imageLogin, image=square_left, bg="#272A37")
@@ -87,6 +89,20 @@ Login_headerText1 = Label(bg_imageLogin,
                           font=("yu gothic ui bold", 20 * -1),
                           bg="#3d404b")
 Login_headerText1.place(x=500, y=130)
+
+save_button_image_1 = PhotoImage(file="assets/save_button.png")
+save_button_1 = Button(
+  bg_imageLogin,
+  image=save_button_image_1,
+  borderwidth=0,
+  highlightthickness=0,
+  relief="flat",
+  activebackground="#3D404B",
+  bg="#3D404B",
+  bd=0,
+  command=save
+)
+save_button_1.place(x=470, y=470)
 
 # ================ Invoice Placeholder Text ====================
 
@@ -120,7 +136,17 @@ label19 = Label(bg_imageLogin,
                 bg="#3d404b")
 label19.place(x=470, y=400)
 
-# ================ All Calculations ====================
+label20 = Label(bg_imageLogin,
+                text=date.today(),
+                fg="#FFFFFF",
+                font=("yu gothic ui bold", 20 * -1),
+                bg="#3d404b")
+label20.place(x=540, y=166)
+from datetime import date
+
+today = date.today()
+
+# ================ Everything else ====================
 
 
 def calculate():
@@ -128,6 +154,8 @@ def calculate():
   global label17
   global label18
   global label19
+  global t1check
+  global t2check
 
   label16.destroy()
   label17.destroy()
@@ -136,19 +164,30 @@ def calculate():
 
   sum = 0
   sum2 = 0
-  
+
   if dogs_entry.get() != "":
-    t1 = int(dogs_entry.get())
+    t1 = (dogs_entry.get())
   else:
     t1 = ""
   if days_entry.get() != "":
-    t2 = int(days_entry.get())
+    t2 = (days_entry.get())
   else:
-      print("hi")
+    t2 = ""
 
-  if t1 == "" or t2 == "":
+  t1check = t1.isdigit()
+  t2check = t2.isdigit()
+
+  if t1 == "" or t1check == False:
     t1 = 0
+
+  if t2 == "" or t2check == False:
     t2 = 0
+
+  if t1check == True:
+    t1 = int(t1)
+
+  if t2check == True:
+    t2 = int(t2)
 
   sum = t1 * t2
   sum2 = sum * 4
@@ -235,12 +274,28 @@ Login_button_1 = Button(bg_imageLogin,
                         highlightthickness=0,
                         relief="flat",
                         activebackground="#272A37",
+                        bg="#272A37",
                         command=calculate
                         #cursor="hand2",
                         )
 Login_button_1.place(x=70, y=445, width=333, height=65)
 
 
+def next():
+  os.system('python saved_invoices.py')
+
+
+next_button_image_1 = PhotoImage(file="assets/download1.png")
+next_button_1 = Button(bg_imageLogin,
+                       image=next_button_image_1,
+                       borderwidth=0,
+                       highlightthickness=0,
+                       relief="flat",
+                       activebackground="#1d90f5",
+                       bg="#1d90f5",
+                       bd=0,
+                       command=next)
+next_button_1.place(x=920, y=40)
 
 window.resizable(False, False)
 window.mainloop()

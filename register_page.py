@@ -1,8 +1,7 @@
 from tkinter import *
 import os
 import shutil
-import sqlite3
-from cryptography.fernet import Ferne
+from cryptography.fernet import Fernet
 
 window = Tk()
 window.title("Doge Register")
@@ -33,8 +32,11 @@ global name2
 global username
 global password
 global password2
-global key = os.environ['key']  # "secret key" This must be kept secret
-global cipher_suite = Fernet(key)  # This class provides both encryption and decryption facilities.
+global key 
+global cipher_suite
+
+key = os.environ['key']
+cipher_suite = Fernet(key)
 
 name1 = StringVar()
 name2 = StringVar()
@@ -42,58 +44,66 @@ username = StringVar()
 password = StringVar()
 password2 = StringVar()
 
-
+# ================  ================
 
 def register_user():
+  global cipher_suite
   name1_info = name1.get()
   name2_info = name2.get()
   username_info = username.get()
   password_info = password.get()
-  password_info
+  password_info = cipher_suite.encrypt(bytes(password_info, encoding='utf-8'))
 
+  os.makedirs(f"login_info/{username_info}")
+  os.makedirs(f"login_info/{username_info}/saves")
+  
+  file = open("password", "wb")
+  file.write(password_info)
+  file.close()
+
+  shutil.move("password",f"login_info/{username_info}/password")
+  
   file = open(username_info, "w")
   file.write(name1_info + "\n")
   file.write(name2_info + "\n")
   file.write(username_info + "\n")
   file.close()
 
-  file = open()
-  file.write(password_info)
-
-  os.makedirs(f"login_info/{username_info}")
+  
   shutil.move(username_info, f"login_info/{username_info}/{username_info}")
 
-  file = open("save1", "w")
+  file = open("1", "w")
   file.write("Save slot 1 is empty")
   file.close()
-  shutil.move("save1", f"login_info/{username_info}/save1")
+  shutil.move("1", f"login_info/{username_info}/saves/1")
 
-  file = open("save2", "w")
+  file = open("2", "w")
   file.write("Save slot 2 is empty")
   file.close()
-  shutil.move("save2", f"login_info/{username_info}/save2")
+  shutil.move("2", f"login_info/{username_info}/saves/2")
 
-  file = open("save3", "w")
+  file = open("3", "w")
   file.write("Save slot 3 is empty")
   file.close()
-  shutil.move("save3", f"login_info/{username_info}/save3")
+  shutil.move("save3", f"login_info/{username_info}/3")
 
-  file = open("save4", "w")
+  file = open("4", "w")
   file.write("Save slot 4 is empty")
   file.close()
-  shutil.move("save4", f"login_info/{username_info}/save4")
+  shutil.move("4", f"login_info/{username_info}/4")
 
-  file = open("save5", "w")
+  file = open("5", "w")
   file.write("Save slot 5 is empty")
   file.close()
-  shutil.move("save5", f"login_info/{username_info}/save5")
+  shutil.move("5", f"login_info/{username_info}/5")
 
-  file = open("login_attempts", "w")
+  file = open("attempts", "w")
   file.write("5")
   file.close()
-  shutil.move("login_attempts", f"login_info/{username_info}/login_attempts")
-
+  shutil.move("attempts", f"login_info/{username_info}/attempts")
+  
   registered()
+
 
 
 # ================Background Image ====================
@@ -310,6 +320,20 @@ userName_entry = Entry(
 userName_entry.place(x=8, y=17, width=354, height=27)
 
 # ================ Password Name Section ====================
+
+
+def toggle_password():
+    if passwordName_entry.cget('show') == '':
+        passwordName_entry.config(show='*')
+        #toggle_btn.config(text='Show Password')
+    else:
+        passwordName_entry.config(show='')
+        #toggle_btn.config(text='Hide Password')
+
+password_image = PhotoImage(file="assets/pass_icon.png")
+
+
+
 passwordName_image = PhotoImage(file="assets/input_img.png")
 passwordName_image_Label = Label(bg_image,
                                  image=passwordName_image,
@@ -323,11 +347,24 @@ passwordName_text = Label(passwordName_image_Label,
                           bg="#3D404B")
 passwordName_text.place(x=25, y=0)
 
-passwordName_icon = PhotoImage(file="assets/pass_icon.png")
+'''passwordName_icon = PhotoImage(file="assets/pass_icon.png")
 passwordName_icon_Label = Label(passwordName_image_Label,
                                 image=passwordName_icon,
                                 bg="#3D404B")
-passwordName_icon_Label.place(x=159, y=15)
+passwordName_icon_Label.place(x=159, y=15)'''
+
+password_button = Button(passwordName_image_Label,
+  bg_image,
+  image=password_image,
+  borderwidth=0,
+  bg="#3D404B",
+  command=toggle_password,
+  highlightthickness=0,
+  relief="flat",
+  activebackground="#272A37",
+)
+password_button.place(x=159, y=15)
+
 
 passwordName_entry = Entry(
   passwordName_image_Label,
@@ -342,6 +379,19 @@ passwordName_entry = Entry(
 passwordName_entry.place(x=8, y=17, width=140, height=27)
 
 # ================ Confirm Password Name Section ====================
+
+confirm_password_button = Button(passwordName_image_Label,
+  bg_image,
+  image=password_image,
+  borderwidth=0,
+  bg="#3D404B",
+  command=toggle_password,
+  highlightthickness=0,
+  relief="flat",
+  activebackground="#272A37",
+)
+confirm_password_button.place(x=159, y=15)
+
 confirm_passwordName_image = PhotoImage(file="assets/input_img.png")
 confirm_passwordName_image_Label = Label(bg_image,
                                          image=confirm_passwordName_image,
